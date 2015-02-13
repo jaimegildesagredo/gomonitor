@@ -7,27 +7,24 @@ import (
 )
 
 type BytesRepository interface {
-	GetTx() int
-	GetRx() int
+	GetTx(string) int
+	GetRx(string) int
 }
 
-func NewBytesRepository(interfaceName string) BytesRepository {
-	repository := bytesRepository{
-		interfaceName: interfaceName,
-	}
+func NewBytesRepository() BytesRepository {
+	repository := bytesRepository{}
 	return &repository
 }
 
 type bytesRepository struct {
-	interfaceName string
 }
 
-func (repository *bytesRepository) GetTx() int {
-	return readIntFromFile(repository.pathFor("tx_bytes"))
+func (repository *bytesRepository) GetTx(interfaceName string) int {
+	return readIntFromFile(repository.pathFor(interfaceName, "tx_bytes"))
 }
 
-func (repository *bytesRepository) pathFor(statName string) string {
-	return "/sys/class/net/" + repository.interfaceName + "/statistics/" + statName
+func (repository *bytesRepository) pathFor(interfaceName string, statName string) string {
+	return "/sys/class/net/" + interfaceName + "/statistics/" + statName
 }
 
 func readIntFromFile(path string) int {
@@ -50,6 +47,6 @@ func readIntFromFile(path string) int {
 	return value
 }
 
-func (repository *bytesRepository) GetRx() int {
-	return readIntFromFile(repository.pathFor("rx_bytes"))
+func (repository *bytesRepository) GetRx(interfaceName string) int {
+	return readIntFromFile(repository.pathFor(interfaceName, "rx_bytes"))
 }

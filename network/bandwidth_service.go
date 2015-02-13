@@ -3,11 +3,11 @@ package network
 import "time"
 
 type BandwidthService interface {
-	MonitorBandwidth(delay time.Duration) chan Bandwidth
+	MonitorBandwidth(interfaceName string, delay time.Duration) chan Bandwidth
 }
 
-func NewBandwidthServiceFactory(interfaceName string) BandwidthService {
-	return NewBandwidthService(NewBytesRepository(interfaceName))
+func NewBandwidthServiceFactory() BandwidthService {
+	return NewBandwidthService(NewBytesRepository())
 }
 
 func NewBandwidthService(bytesRepo BytesRepository) BandwidthService {
@@ -26,7 +26,7 @@ type Bandwidth struct {
 	Down int
 }
 
-func (service *bandwidthService) MonitorBandwidth(delay time.Duration) chan Bandwidth {
+func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) chan Bandwidth {
 	output := make(chan Bandwidth)
 	go func() {
 		var bandwidth Bandwidth
@@ -38,8 +38,8 @@ func (service *bandwidthService) MonitorBandwidth(delay time.Duration) chan Band
 		for {
 			bandwidth = Bandwidth{}
 
-			currentTxBytes = service.bytesRepo.GetTx()
-			currentRxBytes = service.bytesRepo.GetRx()
+			currentTxBytes = service.bytesRepo.GetTx(interfaceName)
+			currentRxBytes = service.bytesRepo.GetRx(interfaceName)
 
 			if previousTxBytes != 0 && previousRxBytes != 0 {
 				bandwidth.Up = int(float64(currentTxBytes-previousTxBytes) / delay.Seconds())

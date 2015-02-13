@@ -15,12 +15,13 @@ const (
 	A_DELAY                 = 10 * time.Millisecond
 	EXPECTED_BANDWIDTH_UP   = 15000
 	EXPECTED_BANDWIDTH_DOWN = 204800
+	A_INTERFACE_NAME        = "a-interface-name"
 )
 
 func TestMonitorBandwidth(t *testing.T) {
 	bytesRepository := newInMemoryBytesRepository([]int{FIRST_TX_BYTES, LAST_TX_BYTES}, []int{FIRST_RX_BYTES, LAST_RX_BYTES})
 	bandwidthService := NewBandwidthService(bytesRepository)
-	bandwidths := bandwidthService.MonitorBandwidth(A_DELAY)
+	bandwidths := bandwidthService.MonitorBandwidth(A_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
 
@@ -47,7 +48,7 @@ type inMemoryBytesRepository struct {
 	rxBytes []int
 }
 
-func (repo *inMemoryBytesRepository) GetTx() int {
+func (repo *inMemoryBytesRepository) GetTx(interfaceName string) int {
 	var value int
 	if len(repo.txBytes) > 0 {
 		value = repo.txBytes[0]
@@ -62,7 +63,7 @@ func (repo *inMemoryBytesRepository) GetTx() int {
 	return value
 }
 
-func (repo *inMemoryBytesRepository) GetRx() int {
+func (repo *inMemoryBytesRepository) GetRx(interfaceName string) int {
 	var value int
 	if len(repo.rxBytes) > 0 {
 		value = repo.rxBytes[0]

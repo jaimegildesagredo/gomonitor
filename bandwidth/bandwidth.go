@@ -15,8 +15,8 @@ func main() {
 	log.Println("Monitor interface", interfaceName)
 	log.Println("Monitor delay", delay, "seconds")
 
-	bandwidthService := network.NewBandwidthServiceFactory(interfaceName)
-	bandwidths := bandwidthService.MonitorBandwidth(time.Duration(delay) * time.Second)
+	bandwidthService := network.NewBandwidthServiceFactory()
+	bandwidths := bandwidthService.MonitorBandwidth(interfaceName, time.Duration(delay)*time.Second)
 
 	for {
 		select {
