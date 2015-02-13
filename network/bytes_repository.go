@@ -7,8 +7,8 @@ import (
 )
 
 type BytesRepository interface {
-	GetTx(string) int
-	GetRx(string) int
+	GetTx(string) (int, error)
+	GetRx(string) (int, error)
 }
 
 func NewBytesRepository() BytesRepository {
@@ -19,7 +19,7 @@ func NewBytesRepository() BytesRepository {
 type bytesRepository struct {
 }
 
-func (repository *bytesRepository) GetTx(interfaceName string) int {
+func (repository *bytesRepository) GetTx(interfaceName string) (int, error) {
 	return readIntFromFile(repository.pathFor(interfaceName, "tx_bytes"))
 }
 
@@ -27,7 +27,7 @@ func (repository *bytesRepository) pathFor(interfaceName string, statName string
 	return "/sys/class/net/" + interfaceName + "/statistics/" + statName
 }
 
-func readIntFromFile(path string) int {
+func readIntFromFile(path string) (int, error) {
 	var rawValue []byte
 	var value int
 	var err error
@@ -35,18 +35,18 @@ func readIntFromFile(path string) int {
 	rawValue, err = ioutil.ReadFile(path)
 
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
 	value, err = strconv.Atoi(strings.Trim(string(rawValue), "\n"))
 
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
-	return value
+	return value, nil
 }
 
-func (repository *bytesRepository) GetRx(interfaceName string) int {
+func (repository *bytesRepository) GetRx(interfaceName string) (int, error) {
 	return readIntFromFile(repository.pathFor(interfaceName, "rx_bytes"))
 }

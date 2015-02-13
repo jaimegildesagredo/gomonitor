@@ -3,7 +3,7 @@ package network
 import "time"
 
 type BandwidthService interface {
-	MonitorBandwidth(interfaceName string, delay time.Duration) chan Bandwidth
+	MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error)
 }
 
 func NewBandwidthServiceFactory() BandwidthService {
@@ -26,32 +26,47 @@ type Bandwidth struct {
 	Down int
 }
 
-func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) chan Bandwidth {
+func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error) {
 	output := make(chan Bandwidth)
+
+	var currentTxBytes int
+	var previousTxBytes int
+	var currentRxBytes int
+	var previousRxBytes int
+	var err error
+
+	currentTxBytes, err = service.bytesRepo.GetTx(interfaceName)
+
+	if err != nil {
+		return output, err
+	}
+
+	currentRxBytes, err = service.bytesRepo.GetRx(interfaceName)
+
+	if err != nil {
+		return output, err
+	}
+
 	go func() {
 		var bandwidth Bandwidth
-		var currentTxBytes int
-		var previousTxBytes int
-		var currentRxBytes int
-		var previousRxBytes int
 
 		for {
+			time.Sleep(delay)
+
+			previousTxBytes = currentTxBytes
+			previousRxBytes = currentRxBytes
+			currentTxBytes, _ = service.bytesRepo.GetTx(interfaceName)
+			currentRxBytes, _ = service.bytesRepo.GetRx(interfaceName)
+
 			bandwidth = Bandwidth{}
 
-			currentTxBytes = service.bytesRepo.GetTx(interfaceName)
-			currentRxBytes = service.bytesRepo.GetRx(interfaceName)
-
-			if previousTxBytes != 0 && previousRxBytes != 0 {
+			if previousTxBytes != currentTxBytes && previousRxBytes != currentRxBytes {
 				bandwidth.Up = int(float64(currentTxBytes-previousTxBytes) / delay.Seconds())
 				bandwidth.Down = int(float64(currentRxBytes-previousRxBytes) / delay.Seconds())
 				output <- bandwidth
 			}
-
-			previousTxBytes = currentTxBytes
-			previousRxBytes = currentRxBytes
-
-			time.Sleep(delay)
 		}
 	}()
-	return output
+
+	return output, nil
 }

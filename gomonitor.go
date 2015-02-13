@@ -31,8 +31,16 @@ func newBandwidthHanler(bandwidthService network.BandwidthService) httprouter.Ha
 		interfaceName := params.ByName("name")
 
 		bandwidths, found := bandwidthsByInterface[interfaceName]
+		var err error
 		if !found {
-			bandwidths = bandwidthService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
+			bandwidths, err = bandwidthService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Println("Error monitoring bandwidth for", interfaceName, err.Error())
+				return
+			}
+
 			bandwidthsByInterface[interfaceName] = bandwidths
 		}
 

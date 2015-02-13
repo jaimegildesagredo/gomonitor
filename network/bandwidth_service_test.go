@@ -1,6 +1,7 @@
 package network_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -15,13 +16,13 @@ const (
 	A_DELAY                 = 10 * time.Millisecond
 	EXPECTED_BANDWIDTH_UP   = 15000
 	EXPECTED_BANDWIDTH_DOWN = 204800
-	A_INTERFACE_NAME        = "a-interface-name"
+	AN_INTERFACE_NAME       = "a-interface-name"
 )
 
 func TestMonitorBandwidth(t *testing.T) {
 	bytesRepository := newInMemoryBytesRepository([]int{FIRST_TX_BYTES, LAST_TX_BYTES}, []int{FIRST_RX_BYTES, LAST_RX_BYTES})
 	bandwidthService := NewBandwidthService(bytesRepository)
-	bandwidths := bandwidthService.MonitorBandwidth(A_INTERFACE_NAME, A_DELAY)
+	bandwidths, _ := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
 
@@ -32,7 +33,17 @@ func TestMonitorBandwidth(t *testing.T) {
 	if bandwidth.Down != EXPECTED_BANDWIDTH_DOWN {
 		t.Fatal("Invalid bandwidth down value", bandwidth.Down, "expected", EXPECTED_BANDWIDTH_DOWN)
 	}
+}
 
+func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
+	bytesRepository := newInMemoryBytesRepository([]int{}, []int{})
+	bandwidthService := NewBandwidthService(bytesRepository)
+
+	_, err := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
+
+	if err == nil {
+		t.Fatal("Expected an error when interface does not exists")
+	}
 }
 
 func newInMemoryBytesRepository(txBytes []int, rxBytes []int) BytesRepository {
@@ -48,7 +59,7 @@ type inMemoryBytesRepository struct {
 	rxBytes []int
 }
 
-func (repo *inMemoryBytesRepository) GetTx(interfaceName string) int {
+func (repo *inMemoryBytesRepository) GetTx(interfaceName string) (int, error) {
 	var value int
 	if len(repo.txBytes) > 0 {
 		value = repo.txBytes[0]
@@ -60,10 +71,14 @@ func (repo *inMemoryBytesRepository) GetTx(interfaceName string) int {
 		repo.txBytes = []int{}
 	}
 
-	return value
+	if value == 0 {
+		return value, errors.New("")
+	}
+
+	return value, nil
 }
 
-func (repo *inMemoryBytesRepository) GetRx(interfaceName string) int {
+func (repo *inMemoryBytesRepository) GetRx(interfaceName string) (int, error) {
 	var value int
 	if len(repo.rxBytes) > 0 {
 		value = repo.rxBytes[0]
@@ -75,5 +90,8 @@ func (repo *inMemoryBytesRepository) GetRx(interfaceName string) int {
 		repo.rxBytes = []int{}
 	}
 
-	return value
+	if value == 0 {
+		return value, errors.New("")
+	}
+	return value, nil
 }
