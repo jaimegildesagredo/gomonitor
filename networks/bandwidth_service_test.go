@@ -20,8 +20,8 @@ const (
 )
 
 func TestMonitorBandwidth(t *testing.T) {
-	bytesRepository := newInMemoryBytesRepository([]int{FIRST_TX_BYTES, LAST_TX_BYTES}, []int{FIRST_RX_BYTES, LAST_RX_BYTES})
-	bandwidthService := NewBandwidthService(bytesRepository)
+	interfacesRepository := newInMemoryInterfacesRepository([]int{FIRST_TX_BYTES, LAST_TX_BYTES}, []int{FIRST_RX_BYTES, LAST_RX_BYTES})
+	bandwidthService := NewBandwidthService(interfacesRepository)
 	bandwidths, _ := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
@@ -36,8 +36,8 @@ func TestMonitorBandwidth(t *testing.T) {
 }
 
 func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
-	bytesRepository := newInMemoryBytesRepository([]int{}, []int{})
-	bandwidthService := NewBandwidthService(bytesRepository)
+	interfacesRepository := newInMemoryInterfacesRepository([]int{}, []int{})
+	bandwidthService := NewBandwidthService(interfacesRepository)
 
 	_, err := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
@@ -46,20 +46,20 @@ func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
 	}
 }
 
-func newInMemoryBytesRepository(txBytes []int, rxBytes []int) BytesRepository {
-	repository := inMemoryBytesRepository{
+func newInMemoryInterfacesRepository(txBytes []int, rxBytes []int) InterfacesRepository {
+	repository := inMemoryInterfacesRepository{
 		txBytes: txBytes,
 		rxBytes: rxBytes,
 	}
 	return &repository
 }
 
-type inMemoryBytesRepository struct {
+type inMemoryInterfacesRepository struct {
 	txBytes []int
 	rxBytes []int
 }
 
-func (repo *inMemoryBytesRepository) GetTx(interfaceName string) (int, error) {
+func (repo *inMemoryInterfacesRepository) GetTxBytes(interfaceName string) (int, error) {
 	var value int
 	if len(repo.txBytes) > 0 {
 		value = repo.txBytes[0]
@@ -78,7 +78,7 @@ func (repo *inMemoryBytesRepository) GetTx(interfaceName string) (int, error) {
 	return value, nil
 }
 
-func (repo *inMemoryBytesRepository) GetRx(interfaceName string) (int, error) {
+func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) (int, error) {
 	var value int
 	if len(repo.rxBytes) > 0 {
 		value = repo.rxBytes[0]

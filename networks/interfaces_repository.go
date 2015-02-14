@@ -6,24 +6,24 @@ import (
 	"strings"
 )
 
-type BytesRepository interface {
-	GetTx(string) (int, error)
-	GetRx(string) (int, error)
+type InterfacesRepository interface {
+	GetTxBytes(interfaceName string) (int, error)
+	GetRxBytes(interfaceName string) (int, error)
 }
 
-func NewBytesRepository() BytesRepository {
-	repository := bytesRepository{}
+func NewInterfacesRepository() InterfacesRepository {
+	repository := interfacesRepository{}
 	return &repository
 }
 
-type bytesRepository struct {
+type interfacesRepository struct {
 }
 
-func (repository *bytesRepository) GetTx(interfaceName string) (int, error) {
+func (repository *interfacesRepository) GetTxBytes(interfaceName string) (int, error) {
 	return readIntFromFile(repository.pathFor(interfaceName, "tx_bytes"))
 }
 
-func (repository *bytesRepository) pathFor(interfaceName string, statName string) string {
+func (repository *interfacesRepository) pathFor(interfaceName string, statName string) string {
 	return "/sys/class/net/" + interfaceName + "/statistics/" + statName
 }
 
@@ -47,6 +47,6 @@ func readIntFromFile(path string) (int, error) {
 	return value, nil
 }
 
-func (repository *bytesRepository) GetRx(interfaceName string) (int, error) {
+func (repository *interfacesRepository) GetRxBytes(interfaceName string) (int, error) {
 	return readIntFromFile(repository.pathFor(interfaceName, "rx_bytes"))
 }

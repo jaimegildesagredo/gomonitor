@@ -1,24 +1,27 @@
 package networks
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 type BandwidthService interface {
 	MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error)
 }
 
 func NewBandwidthServiceFactory() BandwidthService {
-	return NewBandwidthService(NewBytesRepository())
+	return NewBandwidthService(NewInterfacesRepository())
 }
 
-func NewBandwidthService(bytesRepo BytesRepository) BandwidthService {
+func NewBandwidthService(interfacesRepo InterfacesRepository) BandwidthService {
 	service := bandwidthService{
-		bytesRepo: bytesRepo,
+		interfacesRepo: interfacesRepo,
 	}
 	return &service
 }
 
 type bandwidthService struct {
-	bytesRepo BytesRepository
+	interfacesRepo InterfacesRepository
 }
 
 type Bandwidth struct {
@@ -35,13 +38,13 @@ func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay ti
 	var previousRxBytes int
 	var err error
 
-	currentTxBytes, err = service.bytesRepo.GetTx(interfaceName)
+	currentTxBytes, err = service.interfacesRepo.GetTxBytes(interfaceName)
 
 	if err != nil {
 		return output, err
 	}
 
-	currentRxBytes, err = service.bytesRepo.GetRx(interfaceName)
+	currentRxBytes, err = service.interfacesRepo.GetRxBytes(interfaceName)
 
 	if err != nil {
 		return output, err
@@ -55,14 +58,16 @@ func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay ti
 
 			previousTxBytes = currentTxBytes
 			previousRxBytes = currentRxBytes
-			currentTxBytes, _ = service.bytesRepo.GetTx(interfaceName)
-			currentRxBytes, _ = service.bytesRepo.GetRx(interfaceName)
+			currentTxBytes, _ = service.interfacesRepo.GetTxBytes(interfaceName)
+			currentRxBytes, _ = service.interfacesRepo.GetRxBytes(interfaceName)
 
 			bandwidth = Bandwidth{}
 
 			if previousTxBytes != currentTxBytes && previousRxBytes != currentRxBytes {
 				bandwidth.Up = int(float64(currentTxBytes-previousTxBytes) / delay.Seconds())
 				bandwidth.Down = int(float64(currentRxBytes-previousRxBytes) / delay.Seconds())
+
+				log.Println("Bandwidth for", interfaceName, bandwidth)
 				output <- bandwidth
 			}
 		}
