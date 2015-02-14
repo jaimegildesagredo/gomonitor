@@ -1,11 +1,11 @@
-package network_test
+package networks_test
 
 import (
 	"errors"
 	"testing"
 	"time"
 
-	. "github.com/jaimegildesagredo/gomonitor/network"
+	. "github.com/jaimegildesagredo/gomonitor/networks"
 )
 
 const (

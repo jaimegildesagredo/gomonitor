@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jaimegildesagredo/gomonitor/network"
+	"github.com/jaimegildesagredo/gomonitor/networks"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -17,15 +17,15 @@ const (
 func main() {
 	log.Println("Starting gomonitor")
 
-	bandwidthService := network.NewBandwidthServiceFactory()
+	bandwidthService := networks.NewBandwidthServiceFactory()
 
 	router := httprouter.New()
 	router.GET("/networks/:name/bandwidth", newBandwidthHanler(bandwidthService))
 	http.ListenAndServe(":3000", router)
 }
 
-func newBandwidthHanler(bandwidthService network.BandwidthService) httprouter.Handle {
-	bandwidthsByInterface := map[string]chan network.Bandwidth{}
+func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.Handle {
+	bandwidthsByInterface := map[string]chan networks.Bandwidth{}
 
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		interfaceName := params.ByName("name")

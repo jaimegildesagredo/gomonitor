@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/jaimegildesagredo/gomonitor/network"
+	"github.com/jaimegildesagredo/gomonitor/networks"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 	log.Println("Monitor interface", interfaceName)
 	log.Println("Monitor delay", delay, "seconds")
 
-	bandwidthService := network.NewBandwidthServiceFactory()
+	bandwidthService := networks.NewBandwidthServiceFactory()
 	bandwidths, err := bandwidthService.MonitorBandwidth(interfaceName, time.Duration(delay)*time.Second)
 
 	if err != nil {
