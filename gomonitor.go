@@ -25,15 +25,13 @@ func main() {
 }
 
 func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.Handle {
-	bandwidthsByInterface := map[string]chan networks.Bandwidth{}
+	lastBandwidthsByInterface := map[string]networks.Bandwidth{}
 
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		interfaceName := params.ByName("name")
-
-		bandwidths, found := bandwidthsByInterface[interfaceName]
-		var err error
+		bandwidth, found := lastBandwidthsByInterface[interfaceName]
 		if !found {
-			bandwidths, err = bandwidthService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
+			bandwidths, err := bandwidthService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
 
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -41,10 +39,16 @@ func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.H
 				return
 			}
 
-			bandwidthsByInterface[interfaceName] = bandwidths
+			bandwidth = <-bandwidths
+
+			go func() {
+				for bandwidth := range bandwidths {
+					lastBandwidthsByInterface[interfaceName] = bandwidth
+				}
+			}()
 		}
 
-		bandwidth := <-bandwidths
+		lastBandwidthsByInterface[interfaceName] = bandwidth
 
 		serialized, err := json.Marshal(map[string]interface{}{
 			"up":         bandwidth.Up,
