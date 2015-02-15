@@ -1,7 +1,7 @@
 package networks
 
 import (
-	"log"
+	"fmt"
 	"time"
 )
 
@@ -31,45 +31,40 @@ type Bandwidth struct {
 
 func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error) {
 	output := make(chan Bandwidth)
+	txBytes := []int{}
+	rxBytes := []int{}
 
-	var currentTxBytes int
-	var previousTxBytes int
-	var currentRxBytes int
-	var previousRxBytes int
-	var err error
-
-	currentTxBytes, err = service.interfacesRepo.GetTxBytes(interfaceName)
-
-	if err != nil {
-		return output, err
-	}
-
-	currentRxBytes, err = service.interfacesRepo.GetRxBytes(interfaceName)
-
-	if err != nil {
-		return output, err
+	if !service.interfacesRepo.Exists(interfaceName) {
+		return output, fmt.Errorf("Interface %s does not exist", interfaceName)
 	}
 
 	go func() {
 		var bandwidth Bandwidth
 
 		for {
-			time.Sleep(delay)
+			txBytes = append(txBytes, service.interfacesRepo.GetTxBytes(interfaceName))
+			if len(txBytes) > 2 {
+				txBytes = txBytes[1:]
+			}
 
-			previousTxBytes = currentTxBytes
-			previousRxBytes = currentRxBytes
-			currentTxBytes, _ = service.interfacesRepo.GetTxBytes(interfaceName)
-			currentRxBytes, _ = service.interfacesRepo.GetRxBytes(interfaceName)
+			rxBytes = append(rxBytes, service.interfacesRepo.GetRxBytes(interfaceName))
+			if len(rxBytes) > 2 {
+				rxBytes = rxBytes[1:]
+			}
 
 			bandwidth = Bandwidth{}
 
-			if previousTxBytes != currentTxBytes && previousRxBytes != currentRxBytes {
-				bandwidth.Up = int(float64(currentTxBytes-previousTxBytes) / delay.Seconds())
-				bandwidth.Down = int(float64(currentRxBytes-previousRxBytes) / delay.Seconds())
-
-				log.Println("Bandwidth for", interfaceName, bandwidth)
-				output <- bandwidth
+			if len(txBytes) == 2 {
+				bandwidth.Up = int(float64(txBytes[1]-txBytes[0]) / delay.Seconds())
 			}
+
+			if len(rxBytes) == 2 {
+				bandwidth.Down = int(float64(rxBytes[1]-rxBytes[0]) / delay.Seconds())
+			}
+
+			output <- bandwidth
+
+			time.Sleep(delay)
 		}
 	}()
 

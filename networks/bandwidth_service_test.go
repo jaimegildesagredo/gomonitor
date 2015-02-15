@@ -1,7 +1,6 @@
 package networks_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -20,11 +19,16 @@ const (
 )
 
 func TestMonitorBandwidth(t *testing.T) {
-	interfacesRepository := newInMemoryInterfacesRepository([]int{FIRST_TX_BYTES, LAST_TX_BYTES}, []int{FIRST_RX_BYTES, LAST_RX_BYTES})
+	interfacesRepository := newInMemoryInterfacesRepository(
+		[]string{AN_INTERFACE_NAME},
+		[]int{FIRST_TX_BYTES, LAST_TX_BYTES},
+		[]int{FIRST_RX_BYTES, LAST_RX_BYTES})
+
 	bandwidthService := NewBandwidthService(interfacesRepository)
 	bandwidths, _ := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
+	bandwidth = <-bandwidths
 
 	if bandwidth.Up != EXPECTED_BANDWIDTH_UP {
 		t.Fatal("Invalid bandwidth up value", bandwidth.Up, "expected", EXPECTED_BANDWIDTH_UP)
@@ -36,7 +40,7 @@ func TestMonitorBandwidth(t *testing.T) {
 }
 
 func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
-	interfacesRepository := newInMemoryInterfacesRepository([]int{}, []int{})
+	interfacesRepository := newInMemoryInterfacesRepository([]string{}, []int{}, []int{})
 	bandwidthService := NewBandwidthService(interfacesRepository)
 
 	_, err := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
@@ -46,20 +50,22 @@ func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
 	}
 }
 
-func newInMemoryInterfacesRepository(txBytes []int, rxBytes []int) InterfacesRepository {
+func newInMemoryInterfacesRepository(interfaces []string, txBytes []int, rxBytes []int) InterfacesRepository {
 	repository := inMemoryInterfacesRepository{
-		txBytes: txBytes,
-		rxBytes: rxBytes,
+		interfaces: interfaces,
+		txBytes:    txBytes,
+		rxBytes:    rxBytes,
 	}
 	return &repository
 }
 
 type inMemoryInterfacesRepository struct {
-	txBytes []int
-	rxBytes []int
+	interfaces []string
+	txBytes    []int
+	rxBytes    []int
 }
 
-func (repo *inMemoryInterfacesRepository) GetTxBytes(interfaceName string) (int, error) {
+func (repo *inMemoryInterfacesRepository) GetTxBytes(interfaceName string) int {
 	var value int
 	if len(repo.txBytes) > 0 {
 		value = repo.txBytes[0]
@@ -71,14 +77,10 @@ func (repo *inMemoryInterfacesRepository) GetTxBytes(interfaceName string) (int,
 		repo.txBytes = []int{}
 	}
 
-	if value == 0 {
-		return value, errors.New("")
-	}
-
-	return value, nil
+	return value
 }
 
-func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) (int, error) {
+func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) int {
 	var value int
 	if len(repo.rxBytes) > 0 {
 		value = repo.rxBytes[0]
@@ -90,8 +92,18 @@ func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) (int,
 		repo.rxBytes = []int{}
 	}
 
-	if value == 0 {
-		return value, errors.New("")
+	return value
+}
+
+func (repo *inMemoryInterfacesRepository) GetAllInterfaces() []string {
+	return repo.interfaces
+}
+
+func (repo *inMemoryInterfacesRepository) Exists(name string) bool {
+	for _, interfaceName := range repo.interfaces {
+		if name == interfaceName {
+			return true
+		}
 	}
-	return value, nil
+	return false
 }
