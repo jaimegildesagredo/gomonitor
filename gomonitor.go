@@ -46,9 +46,10 @@ func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.H
 
 		bandwidth := <-bandwidths
 
-		serialized, err := json.Marshal(map[string]int{
-			"up":   bandwidth.Up,
-			"down": bandwidth.Down,
+		serialized, err := json.Marshal(map[string]interface{}{
+			"up":         bandwidth.Up,
+			"down":       bandwidth.Down,
+			"created_at": bandwidth.CreatedAt,
 		})
 
 		if err != nil {

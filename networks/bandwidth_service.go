@@ -25,8 +25,9 @@ type bandwidthService struct {
 }
 
 type Bandwidth struct {
-	Up   int
-	Down int
+	Up        int
+	Down      int
+	CreatedAt time.Time
 }
 
 func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error) {
@@ -53,6 +54,7 @@ func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay ti
 			}
 
 			bandwidth = Bandwidth{}
+			bandwidth.CreatedAt = time.Now().UTC()
 
 			if len(txBytes) == 2 {
 				bandwidth.Up = int(float64(txBytes[1]-txBytes[0]) / delay.Seconds())
