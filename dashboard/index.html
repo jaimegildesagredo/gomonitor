@@ -110,7 +110,7 @@
                                    .attr("transform", "translate(" + margin.left + ", " + margin.top + ")"),
               x = d3.time.scale().range([0, width]),
               y = d3.scale.linear().range([height, 0]),
-              xAxis = d3.svg.axis().scale(x).orient("bottom"),
+              xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5),
               yAxis = d3.svg.axis().scale(y).orient("left").ticks(5),
               upLine = d3.svg.line(),
               downLine = d3.svg.line();
@@ -138,7 +138,6 @@
                  .attr("d", downLine(bandwidths));
 
             svg.selectAll("g").remove();
-            xAxis.ticks(bandwidths.length);
             svg.append("g")
                   .attr("class", "x axis")
                   .attr("transform", "translate(0, " + height + ")")
