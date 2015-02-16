@@ -23,18 +23,28 @@
       .downLine {
         stroke: blue;
       }
+
+      #enable-history-button:before {
+        content: "Enable ";
+      }
+
+      #enable-history-button.activated:before {
+        content: "Disable ";
+      }
     </style>
   </head>
   <body>
     <h1>Dashboard</h1>
     <h2>Interface eno1</h2>
     <div id="eno1-graph"></div>
+    <a id="enable-history-button" href="#">history</a>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
       (function () {
         var BandwidthsRepository = function (options) {
             var that = {},
-                limit = options.limit,
+                historyEnabled = options.historyEnabled,
+                historyLimit = options.historyLimit,
                 onDataCallbacks = [],
                 data = [];
 
@@ -46,15 +56,23 @@
               return data;
             }
 
+            that.ToggleHistory = function (value) {
+              historyEnabled = !historyEnabled;
+            }
+
             var sendRequest = function () {
               var request = new XMLHttpRequest();
               request.onreadystatechange = function () {
                 if (request.readyState === 4) {
                   console.log("Response", request);
                   data.push(deserialize(request.response));
-                  if (data.length > limit) {
-                    data.shift();
+
+                  if (!historyEnabled) {
+                    while (data.length > historyLimit) {
+                      data.shift();
+                    }
                   }
+
                   for (var i=0; i<onDataCallbacks.length; i++) {
                     onDataCallbacks[i]();
                   }
@@ -133,7 +151,10 @@
           return that;
         }
 
-        var bandwidthsRepository = BandwidthsRepository({limit: 25});
+        var bandwidthsRepository = BandwidthsRepository({
+          historyEnabled: false,
+          historyLimit: 25
+        });
 
         var bandwidthChart = BandwidthChart({
           parentSelector: "#eno1-graph",
@@ -146,6 +167,13 @@
             left: 75
           }
         });
+
+        var enableHistoryLimitButton = document.getElementById('enable-history-button');
+        enableHistoryLimitButton.addEventListener("click", function (e) {
+          e.preventDefault();
+          bandwidthsRepository.ToggleHistory();
+          e.target.classList.toggle("activated");
+        }, false);
 
         bandwidthsRepository.onData(function () {
           console.log("Data", bandwidthsRepository.findAll());
