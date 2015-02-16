@@ -63,6 +63,7 @@ func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.H
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Write(serialized)
 	}
 }

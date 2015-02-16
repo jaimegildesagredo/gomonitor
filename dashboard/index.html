@@ -1,0 +1,157 @@
+<html>
+  <head>
+    <title>Dashboard</title>
+    <style>
+      body {
+        font: 12px Arial;
+      }
+      path {
+        stroke: black;
+        stroke-width: 2;
+        fill: none;
+      }
+      .upLine, .downLine {
+        fill: none;
+        stroke-width: 1;
+        shape-rendering: crispEdges;
+      }
+
+      .upLine {
+        stroke: red;
+      }
+
+      .downLine {
+        stroke: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dashboard</h1>
+    <h2>Interface eno1</h2>
+    <div id="eno1-graph"></div>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script>
+      (function () {
+        var BandwidthsRepository = function (options) {
+            var that = {},
+                limit = options.limit,
+                onDataCallbacks = [],
+                data = [];
+
+            that.onData = function (callback) {
+              onDataCallbacks.push(callback);
+            }
+
+            that.findAll = function () {
+              return data;
+            }
+
+            var sendRequest = function () {
+              var request = new XMLHttpRequest();
+              request.onreadystatechange = function () {
+                if (request.readyState === 4) {
+                  console.log("Response", request);
+                  data.push(deserialize(request.response));
+                  if (data.length > limit) {
+                    data.shift();
+                  }
+                  for (var i=0; i<onDataCallbacks.length; i++) {
+                    onDataCallbacks[i]();
+                  }
+                }
+              }
+              request.open('GET', 'http://localhost:3000/networks/eno1/bandwidth');
+              request.send(null);
+            }
+
+            window.setInterval(function () { sendRequest(); }, 1000);
+
+            var deserialize = function (raw) {
+              var value = JSON.parse(raw);
+
+              return {
+                created_at: new Date(value.created_at),
+                down: value.down,
+                up: value.up
+              }
+            }
+
+            return that;
+        }
+
+        var BandwidthChart = function (options) {
+          var that = {},
+              parentElement = d3.select(options.parentSelector);
+              margin = options.margin,
+              width = options.width - margin.left - margin.right,
+              height = options.height - margin.top - margin.bottom,
+              svg = parentElement.append("svg")
+                                   .attr("width", width + margin.left + margin.right)
+                                   .attr("height", height + margin.top + margin.bottom)
+                                 .append("g")
+                                   .attr("transform", "translate(" + margin.left + ", " + margin.top + ")"),
+              x = d3.time.scale().range([0, width]),
+              y = d3.scale.linear().range([height, 0]),
+              xAxis = d3.svg.axis().scale(x).orient("bottom"),
+              yAxis = d3.svg.axis().scale(y).orient("left").ticks(5),
+              upLine = d3.svg.line(),
+              downLine = d3.svg.line();
+
+          upLine.x(function (bandwidth) { return x(bandwidth.created_at); });
+          upLine.y(function (bandwidth) { return y(bandwidth.up); });
+
+          downLine.x(function (bandwidth) { return x(bandwidth.created_at); });
+          downLine.y(function (bandwidth) { return y(bandwidth.down); });
+
+          that.draw = function (bandwidths) {
+            var upAndDownBandwidths = [];
+            upAndDownBandwidths = upAndDownBandwidths.concat(bandwidths.map(function (bandwidth) { return bandwidth.up; }));
+            upAndDownBandwidths = upAndDownBandwidths.concat(bandwidths.map(function (bandwidth) { return bandwidth.down; }));
+
+            x.domain(d3.extent(bandwidths, function (bandwidth) { return bandwidth.created_at; }));
+            y.domain([0, d3.max(upAndDownBandwidths, function (bandwidth) { return bandwidth; })]);
+            svg.selectAll("path").remove();
+            svg.append("path")
+                 .attr("class", "upLine")
+                 .attr("d", upLine(bandwidths));
+
+            svg.append("path")
+                 .attr("class", "downLine")
+                 .attr("d", downLine(bandwidths));
+
+            svg.selectAll("g").remove();
+            xAxis.ticks(bandwidths.length);
+            svg.append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", "translate(0, " + height + ")")
+                  .call(xAxis);
+            svg.append("g")
+                  .attr("class", "y axis")
+                  .call(yAxis);
+          }
+
+          return that;
+        }
+
+        var bandwidthsRepository = BandwidthsRepository({limit: 25});
+
+        var bandwidthChart = BandwidthChart({
+          parentSelector: "#eno1-graph",
+          width: 640,
+          height: 480,
+          margin: {
+            top: 30,
+            right: 20,
+            bottom: 30,
+            left: 75
+          }
+        });
+
+        bandwidthsRepository.onData(function () {
+          console.log("Data", bandwidthsRepository.findAll());
+          bandwidthChart.draw(bandwidthsRepository.findAll());
+        })
+      })()
+    </script>
+  </body>
+</html>
