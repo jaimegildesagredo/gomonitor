@@ -77,7 +77,7 @@
                   }
                 }
               }
-              request.open('GET', 'http://localhost:3000/networks/eno1/bandwidth');
+              request.open("GET", "http://" + document.location.hostname  + ":3000/networks/eno1/bandwidth");
               request.send(null);
             }
 
