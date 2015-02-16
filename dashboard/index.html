@@ -89,9 +89,13 @@
 
               return {
                 created_at: new Date(value.created_at),
-                down: value.down,
-                up: value.up
+                down: toKBs(value.down),
+                up: toKBs(value.up)
               }
+            }
+
+            var toKBs = function (value) {
+              return value == 0 ? value : value / 1024;
             }
 
             return that;
