@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +13,10 @@ import (
 
 const (
 	BANDWIDTH_MONITOR_DELAY = 1 * time.Second
+	DASHBOARD_HTML_PATH     = "dashboard/index.html"
 )
+
+var DASHBOARD_HTML []byte
 
 func main() {
 	log.Println("Starting gomonitor")
@@ -22,7 +26,27 @@ func main() {
 	router := httprouter.New()
 	router.GET("/networks/:name/bandwidth", newBandwidthHanler(interfacesService))
 	router.GET("/networks", newNetworksHandler(interfacesService))
+	router.GET("/dashboard", newDashboardHandler())
 	http.ListenAndServe(":3000", router)
+}
+
+func newDashboardHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if len(DASHBOARD_HTML) == 0 {
+			var err error
+
+			DASHBOARD_HTML, err = ioutil.ReadFile(DASHBOARD_HTML_PATH)
+
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				log.Println("Error reading", DASHBOARD_HTML_PATH, err.Error())
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(DASHBOARD_HTML)
+	}
 }
 
 func newNetworksHandler(interfacesService networks.InterfacesService) httprouter.Handle {
