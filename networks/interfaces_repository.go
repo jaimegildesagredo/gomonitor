@@ -10,7 +10,7 @@ import (
 type InterfacesRepository interface {
 	GetTxBytes(interfaceName string) int
 	GetRxBytes(interfaceName string) int
-	GetAllInterfaces() []string
+	FindAll() []string
 	Exists(interfaceName string) bool
 }
 
@@ -57,7 +57,7 @@ func (repo *interfacesRepository) GetRxBytes(interfaceName string) int {
 	return readIntFromFile(repo.pathFor(interfaceName, "rx_bytes"))
 }
 
-func (repo *interfacesRepository) GetAllInterfaces() []string {
+func (repo *interfacesRepository) FindAll() []string {
 	interfaces := []string{}
 
 	contents, err := ioutil.ReadDir(repo.baseDir)
@@ -75,7 +75,7 @@ func (repo *interfacesRepository) GetAllInterfaces() []string {
 }
 
 func (repo *interfacesRepository) Exists(interfaceName string) bool {
-	for _, name := range repo.GetAllInterfaces() {
+	for _, name := range repo.FindAll() {
 		if interfaceName == name {
 			return true
 		}

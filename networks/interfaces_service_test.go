@@ -16,7 +16,39 @@ const (
 	EXPECTED_BANDWIDTH_UP   = 15000
 	EXPECTED_BANDWIDTH_DOWN = 204800
 	AN_INTERFACE_NAME       = "a-interface-name"
+	ANOTHER_INTERFACE_NAME  = "another-interface-name"
 )
+
+func TestFindAllReturnsSliceOfNetworkInterfaceNames(t *testing.T) {
+	interfacesRepository := newInMemoryInterfacesRepository(
+		[]string{AN_INTERFACE_NAME, ANOTHER_INTERFACE_NAME},
+		[]int{FIRST_TX_BYTES, LAST_TX_BYTES},
+		[]int{FIRST_RX_BYTES, LAST_RX_BYTES})
+
+	interfacesService := NewInterfacesService(interfacesRepository)
+
+	interfaces := interfacesService.FindAll()
+
+	expectedInterfaces := []string{AN_INTERFACE_NAME, ANOTHER_INTERFACE_NAME}
+	if !equal(interfaces, expectedInterfaces) {
+		t.Fatal("Expected", interfaces, "to equal", expectedInterfaces)
+	}
+
+}
+
+func equal(actual []string, expected []string) bool {
+	if len(actual) != len(expected) {
+		return false
+	}
+
+	for i, item := range actual {
+		if item != expected[i] {
+			return false
+		}
+	}
+
+	return true
+}
 
 func TestMonitorBandwidth(t *testing.T) {
 	interfacesRepository := newInMemoryInterfacesRepository(
@@ -95,7 +127,7 @@ func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) int {
 	return value
 }
 
-func (repo *inMemoryInterfacesRepository) GetAllInterfaces() []string {
+func (repo *inMemoryInterfacesRepository) FindAll() []string {
 	return repo.interfaces
 }
 
