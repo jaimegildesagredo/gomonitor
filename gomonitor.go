@@ -17,21 +17,21 @@ const (
 func main() {
 	log.Println("Starting gomonitor")
 
-	bandwidthService := networks.NewBandwidthServiceFactory()
+	interfacesService := networks.NewInterfacesServiceFactory()
 
 	router := httprouter.New()
-	router.GET("/networks/:name/bandwidth", newBandwidthHanler(bandwidthService))
+	router.GET("/networks/:name/bandwidth", newBandwidthHanler(interfacesService))
 	http.ListenAndServe(":3000", router)
 }
 
-func newBandwidthHanler(bandwidthService networks.BandwidthService) httprouter.Handle {
+func newBandwidthHanler(interfacesService networks.InterfacesService) httprouter.Handle {
 	lastBandwidthsByInterface := map[string]networks.Bandwidth{}
 
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		interfaceName := params.ByName("name")
 		bandwidth, found := lastBandwidthsByInterface[interfaceName]
 		if !found {
-			bandwidths, err := bandwidthService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
+			bandwidths, err := interfacesService.MonitorBandwidth(interfaceName, BANDWIDTH_MONITOR_DELAY)
 
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

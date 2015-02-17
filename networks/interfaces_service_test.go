@@ -24,8 +24,8 @@ func TestMonitorBandwidth(t *testing.T) {
 		[]int{FIRST_TX_BYTES, LAST_TX_BYTES},
 		[]int{FIRST_RX_BYTES, LAST_RX_BYTES})
 
-	bandwidthService := NewBandwidthService(interfacesRepository)
-	bandwidths, _ := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
+	interfacesService := NewInterfacesService(interfacesRepository)
+	bandwidths, _ := interfacesService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
 	bandwidth = <-bandwidths
@@ -41,9 +41,9 @@ func TestMonitorBandwidth(t *testing.T) {
 
 func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
 	interfacesRepository := newInMemoryInterfacesRepository([]string{}, []int{}, []int{})
-	bandwidthService := NewBandwidthService(interfacesRepository)
+	interfacesService := NewInterfacesService(interfacesRepository)
 
-	_, err := bandwidthService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
+	_, err := interfacesService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	if err == nil {
 		t.Fatal("Expected an error when interface does not exists")

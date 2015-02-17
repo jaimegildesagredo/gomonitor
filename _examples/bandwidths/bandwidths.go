@@ -15,8 +15,8 @@ func main() {
 	log.Println("Monitor interface", interfaceName)
 	log.Println("Monitor delay", delay, "seconds")
 
-	bandwidthService := networks.NewBandwidthServiceFactory()
-	bandwidths, err := bandwidthService.MonitorBandwidth(interfaceName, time.Duration(delay)*time.Second)
+	interfacesService := networks.NewInterfacesServiceFactory()
+	bandwidths, err := interfacesService.MonitorBandwidth(interfaceName, time.Duration(delay)*time.Second)
 
 	if err != nil {
 		log.Fatal(err)

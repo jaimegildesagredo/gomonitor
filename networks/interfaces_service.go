@@ -5,22 +5,22 @@ import (
 	"time"
 )
 
-type BandwidthService interface {
+type InterfacesService interface {
 	MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error)
 }
 
-func NewBandwidthServiceFactory() BandwidthService {
-	return NewBandwidthService(NewInterfacesRepository())
+func NewInterfacesServiceFactory() InterfacesService {
+	return NewInterfacesService(NewInterfacesRepository())
 }
 
-func NewBandwidthService(interfacesRepo InterfacesRepository) BandwidthService {
-	service := bandwidthService{
+func NewInterfacesService(interfacesRepo InterfacesRepository) InterfacesService {
+	service := interfacesService{
 		interfacesRepo: interfacesRepo,
 	}
 	return &service
 }
 
-type bandwidthService struct {
+type interfacesService struct {
 	interfacesRepo InterfacesRepository
 }
 
@@ -30,7 +30,7 @@ type Bandwidth struct {
 	CreatedAt time.Time
 }
 
-func (service *bandwidthService) MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error) {
+func (service *interfacesService) MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error) {
 	output := make(chan Bandwidth)
 	txBytes := []int{}
 	rxBytes := []int{}
