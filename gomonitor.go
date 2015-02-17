@@ -21,7 +21,24 @@ func main() {
 
 	router := httprouter.New()
 	router.GET("/networks/:name/bandwidth", newBandwidthHanler(interfacesService))
+	router.GET("/networks", newNetworksHandler(interfacesService))
 	http.ListenAndServe(":3000", router)
+}
+
+func newNetworksHandler(interfacesService networks.InterfacesService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		serialized, err := json.Marshal(interfacesService.FindAll())
+
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println("Error marshalling network interfaces", err.Error())
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Write(serialized)
+	}
 }
 
 func newBandwidthHanler(interfacesService networks.InterfacesService) httprouter.Handle {
