@@ -165,7 +165,7 @@
       if (enabled) {
         view.enabled();
       } else {
-        view.disable();
+        view.disabled();
       }
       onClick();
     })
