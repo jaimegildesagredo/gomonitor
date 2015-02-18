@@ -30,6 +30,7 @@ func main() {
 	router.GET("/networks", resources.NewNetworksHandler(interfacesService))
 	router.GET("/load", resources.NewLoadHandler(loadService))
 	router.GET("/dashboards/network", dashboards.NewNetworkDashboardHandler())
+	router.GET("/dashboards/load", dashboards.NewLoadDashboardHandler())
 	router.GET("/gomonitor.js", dashboards.NewGomonitorJsHandler())
 	http.ListenAndServe(":3000", router)
 }

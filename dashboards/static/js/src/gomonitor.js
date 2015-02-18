@@ -1,4 +1,66 @@
 (function () {
+  var COLORS = [
+    "red",
+    "blue",
+    "green"
+  ]
+
+  var LoadRepository = function (options) {
+    var that = {},
+        baseUrl = options.baseUrl,
+        historyEnabled = options.historyEnabled,
+        historyLimit = options.historyLimit,
+        onLoadCallbacks = [],
+        data = [];
+
+    that.findAll = function () {
+      return data;
+    }
+
+      that.toggleHistory = function (value) {
+        historyEnabled = !historyEnabled;
+      }
+
+    that.onLoad = function (callback) {
+      onLoadCallbacks.push(callback);
+    }
+
+    that.monitor = function () {
+      window.setInterval(function () { sendRequest(); }, 1000);
+    }
+
+    var sendRequest = function (interfaceName) {
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+          data.push(deserialize(request.response));
+
+          if (!historyEnabled) {
+            while (data.length > historyLimit) {
+              data.shift();
+            }
+          }
+
+          for (var o=0; o<onLoadCallbacks.length; o++) {
+            onLoadCallbacks[o]();
+          }
+        }
+      }
+      request.open("GET", baseUrl);
+      request.send(null);
+    }
+
+    var deserialize = function (raw) {
+      var data = JSON.parse(raw);
+      return {
+        "created_at": new Date(data.created_at),
+        "values": data.values,
+      }
+    }
+
+    return that;
+
+  }
   var InterfacesRepository = function (options) {
       var that = {},
           baseUrl = options.baseUrl,
@@ -33,7 +95,7 @@
         return JSON.parse(raw);
       }
 
-      that.ToggleHistory = function (value) {
+      that.toggleHistory = function (value) {
         historyEnabled = !historyEnabled;
       }
 
@@ -86,7 +148,7 @@
       return that;
   }
 
-  var BandwidthChart = function (options) {
+  var LineChart = function (options) {
     var that = {},
         element = d3.select(options.element),
         margin = options.margin,
@@ -101,31 +163,36 @@
         y = d3.scale.linear().range([height, 0]),
         xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5),
         yAxis = d3.svg.axis().scale(y).orient("left").ticks(5),
-        upLine = d3.svg.line(),
-        downLine = d3.svg.line();
+        lines = [];
 
-    upLine.x(function (bandwidth) { return x(bandwidth.created_at); });
-    upLine.y(function (bandwidth) { return y(bandwidth.up); });
+    var newLine = function () {
+      var line = d3.svg.line();
+      line.x(function (data) { return x(data[0]); });
+      line.y(function (data) { return y(data[1]); });
+      return line
+    }
 
-    downLine.x(function (bandwidth) { return x(bandwidth.created_at); });
-    downLine.y(function (bandwidth) { return y(bandwidth.down); });
+    that.draw = function (data) {
+      if (lines.length == 0) {
+        for (var i=0; i<data.length; i++) {
+          lines.push(newLine());
+        }
+      }
 
-    that.draw = function (bandwidths) {
-      var upAndDownBandwidths = [];
-      upAndDownBandwidths = upAndDownBandwidths.concat(bandwidths.map(function (bandwidth) { return bandwidth.up; }));
-      upAndDownBandwidths = upAndDownBandwidths.concat(bandwidths.map(function (bandwidth) { return bandwidth.down; }));
+      var flattenedData = [];
+      for (var i=0; i<data.length; i++) {
+        flattenedData = flattenedData.concat(data[i]);
+      }
 
-      x.domain(d3.extent(bandwidths, function (bandwidth) { return bandwidth.created_at; }));
-      y.domain([0, d3.max(upAndDownBandwidths, function (bandwidth) { return bandwidth; })]);
+      x.domain(d3.extent(flattenedData, function (data) { return data[0]; }));
+      y.domain([0, d3.max(flattenedData, function (data) { return data[1]; })]);
 
       svg.selectAll("path").remove();
-      svg.append("path")
-           .attr("class", "upLine")
-           .attr("d", upLine(bandwidths));
-
-      svg.append("path")
-           .attr("class", "downLine")
-           .attr("d", downLine(bandwidths));
+      for (var i=0; i<data.length; i++) {
+        svg.append("path")
+             .attr("class", "line " + COLORS[i])
+             .attr("d", lines[i](data[i]));
+      }
 
       svg.selectAll("g").remove();
       svg.append("g")
@@ -135,6 +202,68 @@
       svg.append("g")
             .attr("class", "y axis")
             .call(yAxis);
+    }
+
+    return that;
+  }
+
+  var LoadChartFactory = function (element, loadRepository) {
+    return LoadChartPresenter({
+      view: LoadChartView({
+        element: element,
+      }),
+      loadRepository: loadRepository,
+    });
+  }
+
+  var LoadChartPresenter = function (options) {
+      var that = {},
+          loadRepository = options.loadRepository,
+          view = options.view;
+
+      loadRepository.onLoad(function () {
+        view.render(loadRepository.findAll());
+      });
+
+      loadRepository.monitor();
+
+      return that;
+  }
+
+  var LoadChartView = function (options) {
+    var that = {},
+        element = options.element,
+        chart = LineChart({
+          element: element,
+          width: 640,
+          height: 480,
+          margin: {
+            top: 30,
+            right: 20,
+            bottom: 30,
+            left: 75
+          }
+        });
+
+    that.render = function (data) {
+      chart.draw(convertData(data));
+    }
+
+    var convertData = function (data) {
+      var loadOne = [],
+          loadFive = [],
+          loadFifteen = [];
+
+      for (var j=0; j<data.length; j++) {
+        var item = data[j],
+            created_at = item.created_at;
+
+        loadOne.push([created_at, item.values[0]]);
+        loadFive.push([created_at, item.values[1]]);
+        loadFifteen.push([created_at, item.values[2]]);
+      }
+
+      return [loadOne, loadFive, loadFifteen];
     }
 
     return that;
@@ -180,7 +309,7 @@
     containerElement.appendChild(chartElement);
     element.appendChild(containerElement);
 
-    var bandwidthChart = BandwidthChart({
+    var chart = LineChart({
       element: chartElement,
       width: 640,
       height: 480,
@@ -193,16 +322,31 @@
     });
 
     that.render = function (data) {
-      bandwidthChart.draw(data);
+      chart.draw(convertData(data));
     }
 
     return that;
   }
 
-  var EnableHistoryButtonFactory = function (element, interfacesRepository) {
+  var convertData = function (data) {
+    var up = [],
+        down = [];
+
+    for (var i=0; i<data.length; i++) {
+      var item = data[i],
+          created_at = item.created_at;
+
+      up.push([created_at, item.up]);
+      down.push([created_at, item.down]);
+    }
+
+    return [up, down];
+  }
+
+  var EnableHistoryButtonFactory = function (element, repository) {
     return EnableHistoryButtonPresenter({
       view: EnableHistoryButtonView({element: element}),
-      interfacesRepository: interfacesRepository
+      repository: repository,
     });
   }
 
@@ -210,7 +354,7 @@
     var that = {},
         enabled = false,
         view = options.view,
-        interfacesRepository = options.interfacesRepository;
+        repository = options.repository;
 
     view.onClick(function () {
       enabled = !enabled;
@@ -219,7 +363,7 @@
       } else {
         view.disabled();
       }
-      interfacesRepository.ToggleHistory();
+      repository.toggleHistory();
     });
 
     return that;
@@ -247,7 +391,7 @@
     return that;
   }
 
-  var main = function () {
+  var networkDashboard = function () {
     var interfacesRepository = InterfacesRepository({
       baseUrl: "http://" + document.location.hostname  + ":3000/networks",
       historyEnabled: false,
@@ -268,5 +412,25 @@
     EnableHistoryButtonFactory(document.getElementById("enable-history-button"), interfacesRepository);
   }
 
+  var loadDashboard = function () {
+    var loadRepository = LoadRepository({
+      baseUrl: "http://" + document.location.hostname  + ":3000/load",
+      historyEnabled: false,
+      historyLimit: 25
+    });
+
+    LoadChartFactory(document.getElementById("load-chart"), loadRepository);
+    EnableHistoryButtonFactory(document.getElementById("enable-history-button"), loadRepository);
+  }
+
+  var main = function () {
+    var dashboardName = window.location.pathname.split("/")[2];
+
+    if (dashboardName == "network") {
+      networkDashboard();
+    } else if (dashboardName == "load") {
+      loadDashboard();
+    }
+  }
   main();
 })()
