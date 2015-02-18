@@ -6,13 +6,36 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jaimegildesagredo/gomonitor/loads"
 	"github.com/jaimegildesagredo/gomonitor/networks"
 	"github.com/julienschmidt/httprouter"
 )
 
 const (
 	BANDWIDTH_MONITOR_DELAY = 1 * time.Second
+	LOAD_MONITOR_DELAY      = 1 * time.Second
 )
+
+func NewLoadHandler(loadService loads.LoadService) httprouter.Handle {
+	var loads_ chan loads.Load
+
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if loads_ == nil {
+			loads_ = loadService.Monitor(LOAD_MONITOR_DELAY)
+		}
+
+		serialized, err := json.Marshal(<-loads_)
+
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println("Error marshalling load", err.Error())
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(serialized)
+	}
+}
 
 func NewNetworksHandler(interfacesService networks.InterfacesService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

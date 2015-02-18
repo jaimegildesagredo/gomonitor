@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jaimegildesagredo/gomonitor/dashboards"
+	"github.com/jaimegildesagredo/gomonitor/loads"
 	"github.com/jaimegildesagredo/gomonitor/networks"
 	"github.com/jaimegildesagredo/gomonitor/resources"
 	"github.com/julienschmidt/httprouter"
@@ -22,10 +23,12 @@ func main() {
 	log.Println("Starting gomonitor")
 
 	interfacesService := networks.NewInterfacesServiceFactory()
+	loadService := loads.NewLoadServiceFactory()
 
 	router := httprouter.New()
 	router.GET("/networks/:name/bandwidth", resources.NewBandwidthHandler(interfacesService))
 	router.GET("/networks", resources.NewNetworksHandler(interfacesService))
+	router.GET("/load", resources.NewLoadHandler(loadService))
 	router.GET("/dashboards/network", dashboards.NewNetworkDashboardHandler())
 	router.GET("/gomonitor.js", dashboards.NewGomonitorJsHandler())
 	http.ListenAndServe(":3000", router)
