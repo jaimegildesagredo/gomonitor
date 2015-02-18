@@ -33,15 +33,17 @@ func main() {
 func newNetworkDashboardHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if len(NETWORK_DASHBOARD_HTML) == 0 {
-			var err error
-
-			NETWORK_DASHBOARD_HTML, err = ioutil.ReadFile(NETWORK_DASHBOARD_HTML_PATH)
+			html, err := ioutil.ReadFile(NETWORK_DASHBOARD_HTML_PATH)
 
 			if err != nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				log.Println("Error reading", NETWORK_DASHBOARD_HTML_PATH, err.Error())
 				return
 			}
+
+			w.Header().Set("Content-Type", "text/html")
+			w.Write(html)
+			return
 		}
 
 		w.Header().Set("Content-Type", "text/html")
@@ -51,7 +53,7 @@ func newNetworkDashboardHandler() httprouter.Handle {
 
 func newNetworksHandler(interfacesService networks.InterfacesService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		serialized, err := json.Marshal(interfacesService.FindAll())
+		serialized, err := serializeInterfaces(interfacesService.FindAll())
 
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -63,6 +65,16 @@ func newNetworksHandler(interfacesService networks.InterfacesService) httprouter
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Write(serialized)
 	}
+}
+
+func serializeInterfaces(interfaces []networks.Interface) ([]byte, error) {
+	plain := []map[string]interface{}{}
+
+	for _, interface_ := range interfaces {
+		plain = append(plain, map[string]interface{}{"name": interface_.Name})
+	}
+
+	return json.Marshal(plain)
 }
 
 func newBandwidthHanler(interfacesService networks.InterfacesService) httprouter.Handle {

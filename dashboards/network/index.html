@@ -56,7 +56,6 @@
                 onBandwidthCallbacks[interfaceName] = [];
               }
               onBandwidthCallbacks[interfaceName].push(callback);
-              console.log("C", onBandwidthCallbacks);
             }
 
             that.findAllBandwidths = function (interfaceName) {
@@ -67,14 +66,14 @@
               var request = new XMLHttpRequest();
               request.onreadystatechange = function () {
                 if (request.readyState === 4) {
-                  callback(deserializeInterfaceNames(request.response));
+                  callback(deserializeInterfaces(request.response));
                 }
               }
               request.open("GET", baseUrl);
               request.send(null);
             }
 
-            var deserializeInterfaceNames = function (raw) {
+            var deserializeInterfaces = function (raw) {
               return JSON.parse(raw);
             }
 
@@ -106,8 +105,6 @@
                   }
 
                   for (var o=0; o<onBandwidthCallbacks[interfaceName].length; o++) {
-                    console.log("CALlBACK", interfaceName, onBandwidthCallbacks[interfaceName], o);
-                    console.log(onBandwidthCallbacks[interfaceName]);
                     onBandwidthCallbacks[interfaceName][o]();
                   }
                 }
@@ -134,7 +131,6 @@
         }
 
         var BandwidthChart = function (options) {
-          console.log("parent", options.parentSelector);
           var that = {},
               parentElement = d3.select(options.parentSelector),
               margin = options.margin,
@@ -216,7 +212,6 @@
             });
 
             interfacesRepository.onBandwidth(interfaceName, function () {
-                console.log("FOO", interfaceName);
               bandwidthChart.draw(interfacesRepository.findAllBandwidths(interfaceName));
             })
             interfacesRepository.monitorBandwidth(interfaceName);
@@ -230,7 +225,7 @@
 
           interfacesRepository.findAll(function (interfacesNames) {
             for (var i=0; i<interfacesNames.length; i++) {
-              monitorBandwidth(interfacesNames[i]);
+              monitorBandwidth(interfacesNames[i].name);
             }
           });
 

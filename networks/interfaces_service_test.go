@@ -21,7 +21,7 @@ const (
 
 func TestFindAllReturnsSliceOfNetworkInterfaceNames(t *testing.T) {
 	interfacesRepository := newInMemoryInterfacesRepository(
-		[]string{AN_INTERFACE_NAME, ANOTHER_INTERFACE_NAME},
+		someInterfaces(),
 		[]int{FIRST_TX_BYTES, LAST_TX_BYTES},
 		[]int{FIRST_RX_BYTES, LAST_RX_BYTES})
 
@@ -36,13 +36,21 @@ func TestFindAllReturnsSliceOfNetworkInterfaceNames(t *testing.T) {
 
 }
 
-func equal(actual []string, expected []string) bool {
+func someInterfaces() []Interface {
+	interfaces := []Interface{}
+	for _, name := range []string{AN_INTERFACE_NAME, ANOTHER_INTERFACE_NAME} {
+		interfaces = append(interfaces, Interface{Name: name})
+	}
+	return interfaces
+}
+
+func equal(actual []Interface, expected []string) bool {
 	if len(actual) != len(expected) {
 		return false
 	}
 
 	for i, item := range actual {
-		if item != expected[i] {
+		if item.Name != expected[i] {
 			return false
 		}
 	}
@@ -52,7 +60,7 @@ func equal(actual []string, expected []string) bool {
 
 func TestMonitorBandwidth(t *testing.T) {
 	interfacesRepository := newInMemoryInterfacesRepository(
-		[]string{AN_INTERFACE_NAME},
+		someInterfaces(),
 		[]int{FIRST_TX_BYTES, LAST_TX_BYTES},
 		[]int{FIRST_RX_BYTES, LAST_RX_BYTES})
 
@@ -72,7 +80,7 @@ func TestMonitorBandwidth(t *testing.T) {
 }
 
 func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
-	interfacesRepository := newInMemoryInterfacesRepository([]string{}, []int{}, []int{})
+	interfacesRepository := newInMemoryInterfacesRepository([]Interface{}, []int{}, []int{})
 	interfacesService := NewInterfacesService(interfacesRepository)
 
 	_, err := interfacesService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
@@ -82,7 +90,7 @@ func TestMonitorBandwidthWhenInterfaceDoesNotExists(t *testing.T) {
 	}
 }
 
-func newInMemoryInterfacesRepository(interfaces []string, txBytes []int, rxBytes []int) InterfacesRepository {
+func newInMemoryInterfacesRepository(interfaces []Interface, txBytes []int, rxBytes []int) InterfacesRepository {
 	repository := inMemoryInterfacesRepository{
 		interfaces: interfaces,
 		txBytes:    txBytes,
@@ -92,7 +100,7 @@ func newInMemoryInterfacesRepository(interfaces []string, txBytes []int, rxBytes
 }
 
 type inMemoryInterfacesRepository struct {
-	interfaces []string
+	interfaces []Interface
 	txBytes    []int
 	rxBytes    []int
 }
@@ -127,13 +135,13 @@ func (repo *inMemoryInterfacesRepository) GetRxBytes(interfaceName string) int {
 	return value
 }
 
-func (repo *inMemoryInterfacesRepository) FindAll() []string {
+func (repo *inMemoryInterfacesRepository) FindAll() []Interface {
 	return repo.interfaces
 }
 
 func (repo *inMemoryInterfacesRepository) Exists(name string) bool {
-	for _, interfaceName := range repo.interfaces {
-		if name == interfaceName {
+	for _, interface_ := range repo.interfaces {
+		if name == interface_.Name {
 			return true
 		}
 	}

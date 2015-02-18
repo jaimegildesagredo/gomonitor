@@ -7,7 +7,7 @@ import (
 
 type InterfacesService interface {
 	MonitorBandwidth(interfaceName string, delay time.Duration) (chan Bandwidth, error)
-	FindAll() []string
+	FindAll() []Interface
 }
 
 func NewInterfacesServiceFactory() InterfacesService {
@@ -31,7 +31,7 @@ type Bandwidth struct {
 	CreatedAt time.Time
 }
 
-func (service *interfacesService) FindAll() []string {
+func (service *interfacesService) FindAll() []Interface {
 	return service.interfacesRepo.FindAll()
 }
 
