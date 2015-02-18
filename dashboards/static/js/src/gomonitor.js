@@ -141,6 +141,59 @@
     return that;
   }
 
+  //var BandwidthChartPresenter = function (options) {
+    //var that = {};
+    //return that;
+  //}
+  //
+
+  var EnableHistoryButtonFactory = function (element, callback) {
+    return EnableHistoryButtonPresenter({
+      view: EnableHistoryButtonView({element: element}),
+      onClick: callback
+    });
+  }
+
+  var EnableHistoryButtonPresenter = function (options) {
+    var that = {},
+        enabled = false,
+        view = options.view,
+        onClick = options.onClick;
+
+    view.onClick(function () {
+      enabled = !enabled;
+      if (enabled) {
+        view.enabled();
+      } else {
+        view.disable();
+      }
+      onClick();
+    })
+    return that;
+  }
+
+  var EnableHistoryButtonView = function (options) {
+    var that = {},
+      element = options.element;
+
+    that.onClick = function (callback) {
+      element.addEventListener("click", function (e) {
+        e.preventDefault();
+        callback();
+      }, false);
+    }
+
+    that.enabled = function () {
+      element.textContent = "Disable history"
+    }
+
+    that.disabled = function () {
+      element.textContent = "Enable history"
+    }
+
+    return that;
+  }
+
   var main = function () {
     var monitorBandwidth = function (interfaceName) {
       var networkBandwidthList = document.getElementById("network-bandwidth");
@@ -188,12 +241,7 @@
       }
     });
 
-    var enableHistoryLimitButton = document.getElementById('enable-history-button');
-    enableHistoryLimitButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      interfacesRepository.ToggleHistory();
-      e.target.classList.toggle("activated");
-    }, false);
+    EnableHistoryButtonFactory(document.getElementById("enable-history-button"), function () { interfacesRepository.ToggleHistory(); })
   }
 
   main();
