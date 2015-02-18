@@ -223,9 +223,11 @@
             historyLimit: 25
           });
 
-          interfacesRepository.findAll(function (interfacesNames) {
-            for (var i=0; i<interfacesNames.length; i++) {
-              monitorBandwidth(interfacesNames[i].name);
+          interfacesRepository.findAll(function (interfaces) {
+            for (var i=0; i<interfaces.length; i++) {
+              if (interfaces[i].state != "down") {
+                monitorBandwidth(interfaces[i].name);
+              }
             }
           });
 

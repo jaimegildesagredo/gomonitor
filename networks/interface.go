@@ -1,5 +1,6 @@
 package networks
 
 type Interface struct {
-	Name string
+	Name  string
+	State string
 }

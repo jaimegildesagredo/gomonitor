@@ -71,7 +71,10 @@ func serializeInterfaces(interfaces []networks.Interface) ([]byte, error) {
 	plain := []map[string]interface{}{}
 
 	for _, interface_ := range interfaces {
-		plain = append(plain, map[string]interface{}{"name": interface_.Name})
+		plain = append(plain, map[string]interface{}{
+			"name":  interface_.Name,
+			"state": interface_.State,
+		})
 	}
 
 	return json.Marshal(plain)
