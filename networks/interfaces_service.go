@@ -61,15 +61,11 @@ func (service *interfacesService) MonitorBandwidth(interfaceName string, delay t
 			bandwidth = Bandwidth{}
 			bandwidth.CreatedAt = time.Now().UTC()
 
-			if len(txBytes) == 2 {
+			if len(txBytes) == 2 || len(rxBytes) == 2 {
 				bandwidth.Up = int(float64(txBytes[1]-txBytes[0]) / delay.Seconds())
-			}
-
-			if len(rxBytes) == 2 {
 				bandwidth.Down = int(float64(rxBytes[1]-rxBytes[0]) / delay.Seconds())
+				output <- bandwidth
 			}
-
-			output <- bandwidth
 
 			time.Sleep(delay)
 		}

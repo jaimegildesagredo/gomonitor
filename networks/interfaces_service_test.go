@@ -68,7 +68,6 @@ func TestMonitorBandwidth(t *testing.T) {
 	bandwidths, _ := interfacesService.MonitorBandwidth(AN_INTERFACE_NAME, A_DELAY)
 
 	bandwidth := <-bandwidths
-	bandwidth = <-bandwidths
 
 	if bandwidth.Up != EXPECTED_BANDWIDTH_UP {
 		t.Fatal("Invalid bandwidth up value", bandwidth.Up, "expected", EXPECTED_BANDWIDTH_UP)
