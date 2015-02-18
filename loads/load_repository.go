@@ -8,7 +8,7 @@ import (
 )
 
 type LoadRepository interface {
-	Get() Load
+	Get() LoadValues
 }
 
 func NewLoadRepository() LoadRepository {
@@ -17,17 +17,17 @@ func NewLoadRepository() LoadRepository {
 
 type loadRepository struct{}
 
-func (repo *loadRepository) Get() Load {
+func (repo *loadRepository) Get() LoadValues {
 	raw, err := ioutil.ReadFile("/proc/loadavg")
 
 	if err != nil {
 		log.Println("Error getting system load", err)
-		return Load{}
+		return LoadValues{}
 	}
 
 	values := strings.Split(string(raw), " ")
 
-	return Load{parseValue(values[0]), parseValue(values[1]), parseValue(values[2])}
+	return LoadValues{parseValue(values[0]), parseValue(values[1]), parseValue(values[2])}
 }
 
 func parseValue(raw string) float32 {

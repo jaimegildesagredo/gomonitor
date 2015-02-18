@@ -26,7 +26,10 @@ func (service *loadService) Monitor(delay time.Duration) chan Load {
 	output := make(chan Load)
 	go func() {
 		for {
-			output <- service.loadRepo.Get()
+			output <- Load{
+				Values:    service.loadRepo.Get(),
+				CreatedAt: time.Now(),
+			}
 			time.Sleep(delay)
 		}
 	}()

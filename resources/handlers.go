@@ -24,7 +24,7 @@ func NewLoadHandler(loadService loads.LoadService) httprouter.Handle {
 			loads_ = loadService.Monitor(LOAD_MONITOR_DELAY)
 		}
 
-		serialized, err := json.Marshal(<-loads_)
+		serialized, err := serializeLoad(<-loads_)
 
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -35,6 +35,13 @@ func NewLoadHandler(loadService loads.LoadService) httprouter.Handle {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(serialized)
 	}
+}
+
+func serializeLoad(load loads.Load) ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"values":     load.Values,
+		"created_at": load.CreatedAt,
+	})
 }
 
 func NewNetworksHandler(interfacesService networks.InterfacesService) httprouter.Handle {

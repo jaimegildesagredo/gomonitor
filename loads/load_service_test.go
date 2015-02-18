@@ -15,28 +15,29 @@ const (
 )
 
 func TestMonitorSystemLoad(t *testing.T) {
-	loadService := NewLoadService(newInMemoryLoadRepository(Load{
+	loadService := NewLoadService(newInMemoryLoadRepository(LoadValues{
 		A_LOAD_ONE, A_LOAD_FIVE, A_LOAD_FIFTEEN}))
 
 	loads := loadService.Monitor(A_DELAY)
 
 	load := <-loads
+	loadValues := load.Values
 
-	if load[0] != A_LOAD_ONE || load[1] != A_LOAD_FIVE || load[2] != A_LOAD_FIFTEEN {
+	if loadValues[0] != A_LOAD_ONE || loadValues[1] != A_LOAD_FIVE || loadValues[2] != A_LOAD_FIFTEEN {
 		t.Fatal("Invalid load values", load, "expected", A_LOAD_ONE, A_LOAD_FIVE, A_LOAD_FIFTEEN)
 	}
 }
 
-func newInMemoryLoadRepository(load Load) LoadRepository {
+func newInMemoryLoadRepository(load LoadValues) LoadRepository {
 	return &inMemoryLoadRepository{
 		load: load,
 	}
 }
 
 type inMemoryLoadRepository struct {
-	load Load
+	load LoadValues
 }
 
-func (repo *inMemoryLoadRepository) Get() Load {
+func (repo *inMemoryLoadRepository) Get() LoadValues {
 	return repo.load
 }

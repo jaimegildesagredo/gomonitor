@@ -1,3 +1,10 @@
 package loads
 
-type Load []float32
+import "time"
+
+type Load struct {
+	Values    LoadValues
+	CreatedAt time.Time
+}
+
+type LoadValues []float32
