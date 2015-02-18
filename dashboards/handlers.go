@@ -9,12 +9,15 @@ import (
 )
 
 const (
-	NETWORK_DASHBOARD_HTML_PATH = "static/html/network_dashboard.html"
+	NETWORK_DASHBOARD_HTML_PATH = "dashboards/static/html/network_dashboard.html"
+	GOMONITOR_JS_PATH           = "dashboards/static/js/src/gomonitor.js"
 )
 
 var NETWORK_DASHBOARD_HTML []byte
+var GOMONITOR_JS []byte
 
 func NewNetworkDashboardHandler() httprouter.Handle {
+	contentType := "text/html"
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if len(NETWORK_DASHBOARD_HTML) == 0 {
 			html, err := ioutil.ReadFile(NETWORK_DASHBOARD_HTML_PATH)
@@ -25,12 +28,35 @@ func NewNetworkDashboardHandler() httprouter.Handle {
 				return
 			}
 
-			w.Header().Set("Content-Type", "text/html")
+			w.Header().Set("Content-Type", contentType)
 			w.Write(html)
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", contentType)
 		w.Write(NETWORK_DASHBOARD_HTML)
+	}
+}
+
+func NewGomonitorJsHandler() httprouter.Handle {
+	contentType := "text/javascript"
+
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if len(GOMONITOR_JS) == 0 {
+			html, err := ioutil.ReadFile(GOMONITOR_JS_PATH)
+
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				log.Println("Error reading", GOMONITOR_JS_PATH, err.Error())
+				return
+			}
+
+			w.Header().Set("Content-Type", contentType)
+			w.Write(html)
+			return
+		}
+
+		w.Header().Set("Content-Type", contentType)
+		w.Write(GOMONITOR_JS)
 	}
 }

@@ -27,5 +27,6 @@ func main() {
 	router.GET("/networks/:name/bandwidth", resources.NewBandwidthHandler(interfacesService))
 	router.GET("/networks", resources.NewNetworksHandler(interfacesService))
 	router.GET("/dashboards/network", dashboards.NewNetworkDashboardHandler())
+	router.GET("/gomonitor.js", dashboards.NewGomonitorJsHandler())
 	http.ListenAndServe(":3000", router)
 }
