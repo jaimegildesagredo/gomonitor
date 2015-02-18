@@ -1,5 +1,4 @@
 (function () {
-  // TODO: Separate repository and service
   var InterfacesRepository = function (options) {
       var that = {},
           baseUrl = options.baseUrl,
@@ -200,11 +199,10 @@
     return that;
   }
 
-  var EnableHistoryButtonFactory = function (element, callback) {
-    // TODO: Pass the repository instead of a callback
+  var EnableHistoryButtonFactory = function (element, interfacesRepository) {
     return EnableHistoryButtonPresenter({
       view: EnableHistoryButtonView({element: element}),
-      onClick: callback
+      interfacesRepository: interfacesRepository
     });
   }
 
@@ -212,7 +210,7 @@
     var that = {},
         enabled = false,
         view = options.view,
-        onClick = options.onClick;
+        interfacesRepository = options.interfacesRepository;
 
     view.onClick(function () {
       enabled = !enabled;
@@ -221,8 +219,9 @@
       } else {
         view.disabled();
       }
-      onClick();
-    })
+      interfacesRepository.ToggleHistory();
+    });
+
     return that;
   }
 
@@ -266,9 +265,7 @@
       }
     });
 
-    EnableHistoryButtonFactory(
-      document.getElementById("enable-history-button"),
-      function () { interfacesRepository.ToggleHistory(); })
+    EnableHistoryButtonFactory(document.getElementById("enable-history-button"), interfacesRepository);
   }
 
   main();
