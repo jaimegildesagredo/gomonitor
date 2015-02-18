@@ -89,11 +89,11 @@
 
   var BandwidthChart = function (options) {
     var that = {},
-        parentElement = d3.select(options.parentSelector),
+        element = d3.select(options.element),
         margin = options.margin,
         width = options.width - margin.left - margin.right,
         height = options.height - margin.top - margin.bottom,
-        svg = parentElement.append("svg")
+        svg = element.append("svg")
                              .attr("width", width + margin.left + margin.right)
                              .attr("height", height + margin.top + margin.bottom)
                            .append("g")
@@ -141,13 +141,67 @@
     return that;
   }
 
-  //var BandwidthChartPresenter = function (options) {
-    //var that = {};
-    //return that;
-  //}
-  //
+  var BandwidthChartFactory = function (interfaceName, element, interfacesRepository) {
+    return BandwidthChartPresenter({
+      interfaceName: interfaceName,
+      view: BandwidthChartView({
+        element: element,
+        interfaceName: interfaceName
+      }),
+      interfacesRepository: interfacesRepository
+    });
+  }
+
+  var BandwidthChartPresenter = function (options) {
+    var that = {},
+        interfaceName = options.interfaceName,
+        view = options.view,
+        interfacesRepository = options.interfacesRepository;
+
+    interfacesRepository.onBandwidth(interfaceName, function () {
+      view.render(interfacesRepository.findAllBandwidths(interfaceName));
+    })
+
+    interfacesRepository.monitorBandwidth(interfaceName);
+
+    return that;
+  }
+
+  var BandwidthChartView = function (options) {
+    var that = {},
+        interfaceName = options.interfaceName,
+        element = options.element,
+        containerElement = document.createElement("div"),
+        titleElement = document.createElement("h3"),
+        chartElement = document.createElement("div");
+
+    titleElement.appendChild(document.createTextNode(interfaceName));
+    containerElement.appendChild(titleElement);
+    chartElement.setAttribute("id", interfaceName + "-chart");
+    containerElement.appendChild(chartElement);
+    element.appendChild(containerElement);
+
+    var bandwidthChart = BandwidthChart({
+      element: chartElement,
+      width: 640,
+      height: 480,
+      margin: {
+        top: 30,
+        right: 20,
+        bottom: 30,
+        left: 75
+      }
+    });
+
+    that.render = function (data) {
+      bandwidthChart.draw(data);
+    }
+
+    return that;
+  }
 
   var EnableHistoryButtonFactory = function (element, callback) {
+    // TODO: Pass the repository instead of a callback
     return EnableHistoryButtonPresenter({
       view: EnableHistoryButtonView({element: element}),
       onClick: callback
@@ -195,53 +249,26 @@
   }
 
   var main = function () {
-    var monitorBandwidth = function (interfaceName) {
-      var networkBandwidthList = document.getElementById("network-bandwidth");
-      var itemElement = document.createElement("li"),
-          containerElement = document.createElement("div"),
-          parentElement = document.createElement("div"),
-          titleElement = document.createElement("h3");
-
-      titleElement.appendChild(document.createTextNode(interfaceName));
-      containerElement.appendChild(titleElement);
-      parentElement.setAttribute("id", interfaceName + "-graph");
-      containerElement.appendChild(parentElement);
-      itemElement.appendChild(containerElement);
-      networkBandwidthList.appendChild(itemElement);
-
-      var bandwidthChart = BandwidthChart({
-        parentSelector: "#" + interfaceName + "-graph",
-        width: 640,
-        height: 480,
-        margin: {
-          top: 30,
-          right: 20,
-          bottom: 30,
-          left: 75
-        }
-      });
-
-      interfacesRepository.onBandwidth(interfaceName, function () {
-        bandwidthChart.draw(interfacesRepository.findAllBandwidths(interfaceName));
-      })
-      interfacesRepository.monitorBandwidth(interfaceName);
-    }
-
     var interfacesRepository = InterfacesRepository({
       baseUrl: "http://" + document.location.hostname  + ":3000/networks",
       historyEnabled: false,
       historyLimit: 25
     });
 
+    var bandwidthCharts = document.getElementById("network-bandwidth");
     interfacesRepository.findAll(function (interfaces) {
       for (var i=0; i<interfaces.length; i++) {
         if (interfaces[i].state != "down") {
-          monitorBandwidth(interfaces[i].name);
+          var itemElement = document.createElement("li");
+          BandwidthChartFactory(interfaces[i].name, itemElement, interfacesRepository);
+          bandwidthCharts.appendChild(itemElement);
         }
       }
     });
 
-    EnableHistoryButtonFactory(document.getElementById("enable-history-button"), function () { interfacesRepository.ToggleHistory(); })
+    EnableHistoryButtonFactory(
+      document.getElementById("enable-history-button"),
+      function () { interfacesRepository.ToggleHistory(); })
   }
 
   main();
