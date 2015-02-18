@@ -18,13 +18,20 @@ const (
 
 func NewLoadHandler(loadService loads.LoadService) httprouter.Handle {
 	var loads_ chan loads.Load
+	var lastLoad loads.Load
 
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if loads_ == nil {
 			loads_ = loadService.Monitor(LOAD_MONITOR_DELAY)
+
+			go func() {
+				for load := range loads_ {
+					lastLoad = load
+				}
+			}()
 		}
 
-		serialized, err := serializeLoad(<-loads_)
+		serialized, err := serializeLoad(lastLoad)
 
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
